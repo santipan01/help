@@ -1,0 +1,70 @@
+--========================================================--
+-- FPS BOOSTER AUTOMÁTICO
+--========================================================--
+
+local lighting = game:GetService("Lighting")
+local ws = game:GetService("Workspace")
+
+settings().Rendering.QualityLevel = 1
+
+lighting.GlobalShadows = false
+lighting.FogEnd = 9e9
+lighting.Brightness = 0
+lighting.Ambient = Color3.new(1,1,1)
+
+for _, v in pairs(ws:GetDescendants()) do
+	if v:IsA("BasePart") then
+		v.Material = Enum.Material.SmoothPlastic
+		v.Reflectance = 0
+	end
+	if v:IsA("Decal") or v:IsA("Texture") then
+		v.Transparency = 1
+	end
+	if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+		v.Enabled = false
+	end
+end
+
+print("FPS BOOSTER → ACTIVADO AUTOMÁTICAMENTE")
+
+--========================================================--
+-- OCULTAR/MOSTRAR GUIs ESPECÍFICAS CON TECLA M
+--========================================================--
+
+local UIS = game:GetService("UserInputService")
+local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+local nombresObjetivo = {
+	["SantiPan Helper ☄️"] = true,
+	["Lum0ra Exploits"] = true
+}
+
+local oculto = false
+
+local function toggleGUIs()
+	oculto = not oculto
+
+	for _, gui in pairs(PlayerGui:GetDescendants()) do
+		if gui:IsA("TextLabel") and nombresObjetivo[gui.Text] then
+			local root = gui:FindFirstAncestorWhichIsA("ScreenGui")
+			if root then
+				root.Enabled = not oculto
+			end
+		end
+	end
+
+	print("TARGET GUIs →", oculto and "OCULTAS" or "VISIBLES")
+end
+
+UIS.InputBegan:Connect(function(input, gp)
+	if gp then return end
+	if input.KeyCode == Enum.KeyCode.M then
+		toggleGUIs()
+	end
+end)
+
+--========================================================--
+-- EJECUTAR TU LOADSTRING
+--========================================================--
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/santipan01/helper/refs/heads/main/v4"))()
