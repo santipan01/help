@@ -1,9 +1,3 @@
---========================================================--
--- COMBINED SCRIPT: Megaphone Helper + FPS Devourer V4 + V5 (Invisibility Cloak)
--- V5 (Invisibility Cloak) está integrado como botón "FPS Devourer V5" debajo de V4.
---========================================================--
-
--- SERVICIOS
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CAS = game:GetService("ContextActionService")
@@ -11,26 +5,16 @@ local uis = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 
--- PLAYER / GUI
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
-
--- =======================
--- CONFIG (CLOAK / V5)
--- =======================
-local TOOL_NAME_CLOAK = "Invisibility Cloak"
-
--- Spam estable (más lento pero seguro)
-local CLICK_DELAY = 0.12
-local EQUIP_DELAY = 0.02
-
 local backpack = player:WaitForChild("Backpack")
 local char = player.Character or player.CharacterAdded:Wait()
 
--- Variables V5
+local TOOL_NAME_CLOAK = "Invisibility Cloak"
+local CLICK_DELAY = 0.12
+local EQUIP_DELAY = 0.02
 local v5Enabled = false
 
--- Funciones V5 (mismo comportamiento que tu script de cloak)
 local function getCloakTool()
 	return backpack:FindFirstChild(TOOL_NAME_CLOAK) or (char and char:FindFirstChild(TOOL_NAME_CLOAK))
 end
@@ -38,61 +22,39 @@ end
 local function forceEquipCloak()
 	if not char then return end
 	local t = backpack:FindFirstChild(TOOL_NAME_CLOAK)
-	if t then
-		t.Parent = char
-	end
-
+	if t then t.Parent = char end
 	local t2 = char:FindFirstChild(TOOL_NAME_CLOAK)
-	if t2 and t2.Parent ~= char then
-		t2.Parent = char
-	end
+	if t2 and t2.Parent ~= char then t2.Parent = char end
 end
 
 local function triggerActionCloak(tool)
 	if not tool then return end
-
-	-- Intento normal
-	pcall(function()
-		tool:Activate()
-	end)
-
-	-- Intentar remotes internos
+	pcall(function() tool:Activate() end)
 	for _, v in ipairs(tool:GetDescendants()) do
 		if v:IsA("RemoteEvent") then
-			pcall(function()
-				v:FireServer()
-			end)
+			pcall(function() v:FireServer() end)
 		end
 	end
-
-	-- Simular click REAL (alternativa estable)
 	pcall(function()
 		CAS:BindAction("SpamClick", function() end, false, Enum.UserInputType.MouseButton1)
 		CAS:UnbindAction("SpamClick")
 	end)
 end
 
--- Loops V5 que corren en background y reaccionan a v5Enabled
 task.spawn(function()
 	while true do
 		task.wait(CLICK_DELAY)
-		if v5Enabled then
-			triggerActionCloak(getCloakTool())
-		end
+		if v5Enabled then triggerActionCloak(getCloakTool()) end
 	end
 end)
 
 RunService.RenderStepped:Connect(function()
-	if v5Enabled then
-		forceEquipCloak()
-	end
+	if v5Enabled then forceEquipCloak() end
 end)
 
 task.spawn(function()
 	while true do
-		if v5Enabled then
-			forceEquipCloak()
-		end
+		if v5Enabled then forceEquipCloak() end
 		task.wait(EQUIP_DELAY)
 	end
 end)
@@ -102,28 +64,22 @@ player.CharacterAdded:Connect(function(nc)
 	backpack = player:WaitForChild("Backpack")
 end)
 
--- =======================
--- CONFIG (MEGAPHONE / GUI)
--- =======================
 local TOOL_NAME_MEGA = "Megaphone"
 local PROMPT_HOLD_TIME = 2
 local EQUIP_BEFORE_END = 0.2
 local COOLDOWN_TIME = 20
-
 local TELEPORT_POSITION = Vector3.new(0, 20, 0)
-local TELEPORT_KEY = Enum.KeyCode.X
 local FIRE_KEY = Enum.KeyCode.P
+local TELEPORT_KEY = Enum.KeyCode.X
 
--- GUI MODERNA / COMPACTA / ANIMADA
 local gui = Instance.new("ScreenGui")
 gui.Name = "CombinedController"
 gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
--- Aumenté la altura un poco para que quepan V4 y V5 cómodos
-frame.Size = UDim2.new(0, 175, 0, 310)
-frame.Position = UDim2.new(0.8, 0, 0.45, -140)
+frame.Size = UDim2.new(0, 175, 0, 220)
+frame.Position = UDim2.new(0.8, 0, 0.45, -130)
 frame.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
 frame.BackgroundTransparency = 0.1
 frame.BorderSizePixel = 0
@@ -131,26 +87,15 @@ frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
-local frmCorner = Instance.new("UICorner", frame)
-frmCorner.CornerRadius = UDim.new(0, 14)
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
--- Fade-in suave
-frame.BackgroundTransparency = 1
-TweenService:Create(frame, TweenInfo.new(.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-	BackgroundTransparency = 0.1
-}):Play()
-
--- Barra superior (título fijo)
 local topbar = Instance.new("Frame", frame)
 topbar.Size = UDim2.new(1, 0, 0, 32)
 topbar.BackgroundColor3 = Color3.fromRGB(255,255,255)
 topbar.BackgroundTransparency = 0.3
 topbar.BorderSizePixel = 0
-topbar.Active = true
-topbar.Draggable = false
 
-local topCorner = Instance.new("UICorner", topbar)
-topCorner.CornerRadius = UDim.new(0,14)
+Instance.new("UICorner", topbar).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel", topbar)
 title.Size = UDim2.new(1,0,1,0)
@@ -162,21 +107,17 @@ title.TextSize = 14
 title.TextStrokeTransparency = 0
 title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
 
--- Animación de degradado en título
-do
-	local t = 0
-	RunService.RenderStepped:Connect(function(dt)
-		t = t + dt
-		local c = Color3.fromRGB(
-			math.floor(255 - 95*math.sin(t*2)),
-			math.floor(255 - 95*math.sin(t*2)),
-			math.floor(255 - 95*math.sin(t*2))
-		)
-		title.TextColor3 = c
-	end)
-end
+local t = 0
+RunService.RenderStepped:Connect(function(dt)
+	t = t + dt
+	local c = Color3.fromRGB(
+		math.floor(255 - 95*math.sin(t*2)),
+		math.floor(255 - 95*math.sin(t*2)),
+		math.floor(255 - 95*math.sin(t*2))
+	)
+	title.TextColor3 = c
+end)
 
--- Helper para crear botones con overlay + glow (misma estética)
 local function makeButton(text, y)
 	local b = Instance.new("TextButton")
 	b.Size = UDim2.new(1, -24, 0, 36)
@@ -188,63 +129,16 @@ local function makeButton(text, y)
 	b.Text = text
 	b.TextColor3 = Color3.fromRGB(40,40,40)
 	b.Parent = frame
-
-	local corner = Instance.new("UICorner", b)
-	corner.CornerRadius = UDim.new(0, 10)
-
-	-- Overlay suave
-	local ov = Instance.new("Frame", b)
-	ov.Size = UDim2.new(1,0,1,0)
-	ov.BackgroundColor3 = Color3.fromRGB(255,255,255)
-	ov.BackgroundTransparency = 0.8
-	local corner2 = Instance.new("UICorner", ov)
-	corner2.CornerRadius = UDim.new(0,10)
-
-	-- Sutil borde animado
-	local stroke = Instance.new("UIStroke", b)
-	stroke.Thickness = 1.5
-	stroke.Color = Color3.fromRGB(180,180,200)
-	stroke.Transparency = 0.6
-
-	-- Sombra hover
-	local shadow = Instance.new("UIStroke", b)
-	shadow.Thickness = 2
-	shadow.Color = Color3.fromRGB(0,0,0)
-	shadow.Transparency = 1
-
-	-- Animación hover
-	b.MouseEnter:Connect(function()
-		TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 0.05}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.2}):Play()
-		TweenService:Create(shadow, TweenInfo.new(0.2), {Transparency = 0.3}):Play()
-		TweenService:Create(b, TweenInfo.new(0.15), {Size = UDim2.new(1, -20, 0, 38)}):Play()
-	end)
-
-	b.MouseLeave:Connect(function()
-		TweenService:Create(b, TweenInfo.new(0.15), {BackgroundTransparency = 0.15}):Play()
-		TweenService:Create(stroke, TweenInfo.new(0.2), {Transparency = 0.6}):Play()
-		TweenService:Create(shadow, TweenInfo.new(0.2), {Transparency = 1}):Play()
-		TweenService:Create(b, TweenInfo.new(0.15), {Size = UDim2.new(1, -24, 0, 36)}):Play()
-	end)
-
-	return b, ov, stroke
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+	return b
 end
 
--- Crear botones (coordenadas: mantener V5 justo debajo de V4)
-local autoBtn, autoOverlay, autoGlow = makeButton("Auto: OFF", 45)
-local fireBtn, fireOverlay, fireGlow = makeButton("Disparo", 85)
-local desyncBtn = makeButton("🌀 Desync", 125)
-local respawnBtn = makeButton("Respawn", 165)
-local cycleBtn = makeButton("FPS Devourer V4", 205)
-local v5Btn, v5Overlay, v5Glow = makeButton("FPS Devourer V5", 245)
+local fireBtn = makeButton("Disparo", 45)
+local desyncBtn = makeButton("🌀 Desync", 85)
+local respawnBtn = makeButton("Respawn", 125)
+local v5Btn = makeButton("FPS Devourer V5", 165)
 
--- =================================================
--- MEGAPHONE LOGIC (V4 / Auto / Fire)
--- =================================================
-local autoMode = false
 local lastUseTime = -COOLDOWN_TIME
-local toggled = false
-local running = false
 
 local function canUse()
 	return tick() - lastUseTime >= COOLDOWN_TIME
@@ -253,16 +147,6 @@ end
 local function updateCooldown()
 	local now = tick()
 	local remain = math.max(0, COOLDOWN_TIME - (now - lastUseTime))
-	local pct = remain / COOLDOWN_TIME
-
-	autoOverlay.Size = UDim2.new(1,0,pct,0)
-	fireOverlay.Size = UDim2.new(1,0,pct,0)
-
-	local glowVisible = remain > 0
-	autoGlow.Transparency = glowVisible and 0 or 1
-	fireGlow.Transparency = glowVisible and 0 or 1
-
-	autoBtn.Text = autoMode and ("Auto: ON ("..math.ceil(remain).."s)") or "Auto: OFF"
 	fireBtn.Text = remain > 0 and ("Disparo ("..math.ceil(remain).."s)") or "Disparo"
 end
 
@@ -270,43 +154,53 @@ local function useMegaphone()
 	if not canUse() then return end
 	lastUseTime = tick()
 	updateCooldown()
-
-	local charLocal = player.Character or player.CharacterAdded:Wait()
-	local backpackLocal = player:FindFirstChild("Backpack")
-	if not backpackLocal then return end
-
-	local tool = backpackLocal:FindFirstChild(TOOL_NAME_MEGA) or charLocal:FindFirstChild(TOOL_NAME_MEGA)
+	local c = player.Character or player.CharacterAdded:Wait()
+	local bp = player:FindFirstChild("Backpack")
+	if not bp then return end
+	local tool = bp:FindFirstChild(TOOL_NAME_MEGA) or c:FindFirstChild(TOOL_NAME_MEGA)
 	if tool then
-		tool.Parent = charLocal
+		tool.Parent = c
 		pcall(function() tool:Activate() end)
-
 		local remote = tool:FindFirstChildWhichIsA("RemoteEvent", true)
-		if remote then
-			remote:FireServer()
-		end
+		if remote then remote:FireServer() end
 	end
 end
 
-autoBtn.MouseButton1Click:Connect(function()
-	autoMode = not autoMode
-	updateCooldown()
-end)
-
 fireBtn.MouseButton1Click:Connect(useMegaphone)
-
 uis.InputBegan:Connect(function(i,gp)
-	if gp then return end
-	if i.KeyCode == FIRE_KEY then
-		useMegaphone()
-	end
+	if not gp and i.KeyCode == FIRE_KEY then useMegaphone() end
 end)
 
 ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, who)
-	if who == player and autoMode and canUse() then
+	if who == player and canUse() then
 		task.wait(math.max((prompt.HoldDuration or PROMPT_HOLD_TIME) - EQUIP_BEFORE_END,0))
 		useMegaphone()
 	end
 end)
+
+local function notify(text, duration)
+	duration = duration or 2
+	local n = Instance.new("Frame")
+	n.Size = UDim2.new(0,200,0,40)
+	n.Position = UDim2.new(0.5,-100,-0.1,0)
+	n.BackgroundColor3 = Color3.fromRGB(240,240,250)
+	n.BackgroundTransparency = 0.1
+	n.BorderSizePixel = 0
+	n.Parent = gui
+	Instance.new("UICorner", n).CornerRadius = UDim.new(0,10)
+	local label = Instance.new("TextLabel", n)
+	label.Size = UDim2.new(1,0,1,0)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 14
+	label.TextColor3 = Color3.fromRGB(40,40,40)
+	label.Text = text
+	TweenService:Create(n, TweenInfo.new(0.3), {Position = UDim2.new(0.5,-100,0.05,0)}):Play()
+	task.delay(duration, function()
+		TweenService:Create(n, TweenInfo.new(0.4), {Position = UDim2.new(0.5,-100,-0.1,0), BackgroundTransparency = 1}):Play()
+		task.delay(0.4, function() n:Destroy() end)
+	end)
+end
 
 local function teleport()
 	local c = player.Character
@@ -315,65 +209,21 @@ local function teleport()
 	end
 end
 
--- =================================================
--- NOTIFICACIONES
--- =================================================
-local function showNotification(text, duration)
-	duration = duration or 2
-	local notif = Instance.new("Frame")
-	notif.Size = UDim2.new(0,200,0,40)
-	notif.Position = UDim2.new(0.5,-100,-0.1,0)
-	notif.BackgroundColor3 = Color3.fromRGB(240,240,250)
-	notif.BackgroundTransparency = 0.1
-	notif.BorderSizePixel = 0
-	notif.Parent = gui
-	Instance.new("UICorner", notif).CornerRadius = UDim.new(0,10)
-
-	local label = Instance.new("TextLabel", notif)
-	label.Size = UDim2.new(1,0,1,0)
-	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBold
-	label.TextSize = 14
-	label.TextColor3 = Color3.fromRGB(40,40,40)
-	label.Text = text
-
-	TweenService:Create(notif, TweenInfo.new(0.3), {
-		Position = UDim2.new(0.5,-100,0.05,0)
-	}):Play()
-
-	task.spawn(function()
-		task.wait(duration)
-		TweenService:Create(notif, TweenInfo.new(0.4), {
-			Position = UDim2.new(0.5,-100,-0.1,0),
-			BackgroundTransparency = 1
-		}):Play()
-		task.wait(0.4)
-		notif:Destroy()
-	end)
-end
-
--- =================================================
--- BOTONES DESYNC / RESPAWN / CYCLE V4
--- =================================================
 local function triggerDesync()
-	showNotification("Actualizando Desync...", 0.2)
+	notify("Actualizando Desync...", 0.2)
 	task.delay(0.3, function()
-		showNotification("Actualizado", 1)
+		notify("Actualizado", 1)
 	end)
 	teleport()
 end
 
 desyncBtn.MouseButton1Click:Connect(triggerDesync)
-
-uis.InputBegan:Connect(function(input, gameProcessed)
-	if gameProcessed then return end
-	if input.KeyCode == TELEPORT_KEY then
-		triggerDesync()
-	end
+uis.InputBegan:Connect(function(input, gp)
+	if not gp and input.KeyCode == TELEPORT_KEY then triggerDesync() end
 end)
 
 local function forceRespawn()
-	showNotification("Respawning...", 1)
+	notify("Respawning...", 1)
 	for i = 1,10 do
 		if player.Character then
 			local hum = player.Character:FindFirstChild("Humanoid")
@@ -389,62 +239,6 @@ end
 
 respawnBtn.MouseButton1Click:Connect(forceRespawn)
 
-local function UseTool()
-	local backpackLocal = player:WaitForChild("Backpack")
-	local tool = backpackLocal:FindFirstChild("Giant Potion")
-
-	while not tool do
-		task.wait(0.05)
-		tool = backpackLocal:FindFirstChild("Giant Potion")
-	end
-
-	local charLocal = player.Character or player.CharacterAdded:Wait()
-	tool.Parent = charLocal
-	task.wait(0.15)
-	tool:Activate()
-	task.wait(0.3)
-end
-
-local function ResetCharacter()
-	local charLocal = player.Character
-	if not charLocal then return end
-
-	local humanoid = charLocal:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		humanoid.Health = 0
-	end
-end
-
-local function StartCycle()
-	if running then return end
-	running = true
-
-	task.spawn(function()
-		while toggled do
-			UseTool()
-			ResetCharacter()
-			player.CharacterAdded:Wait()
-			task.wait(1)
-		end
-		running = false
-	end)
-end
-
-cycleBtn.MouseButton1Click:Connect(function()
-	toggled = not toggled
-	cycleBtn.Text = toggled and "FPS Devourer V4 (ON)" or "FPS Devourer V4"
-	cycleBtn.BackgroundColor3 = toggled and Color3.fromRGB(200,255,200) or Color3.fromRGB(255,255,255)
-
-	if toggled then
-		showNotification("FPS Devourer V4 🧪 (Beta)", 1)
-        Wait(1)
-        showNotification("No Funciona con Desync 🚫")
-		StartCycle()
-	end
-end)
-
-
--- Actualizar cooldown continuamente
 task.spawn(function()
 	while true do
 		updateCooldown()
@@ -452,27 +246,18 @@ task.spawn(function()
 	end
 end)
 
--- =================================================
--- BOTÓN FPS DEVOURER V5 (INTEGRADO) - Debajo de V4
--- =================================================
 v5Btn.MouseButton1Click:Connect(function()
 	v5Enabled = not v5Enabled
-
 	if v5Enabled then
-		-- Cambiar texto/estética
 		v5Btn.Text = "FPS Devourer V5 (ON)"
 		v5Btn.BackgroundColor3 = Color3.fromRGB(200,255,200)
-		-- Notificaciones
-		showNotification("Fps Devourer v5 🧷 (Beta)", 1.5)
+		notify("Fps Devourer v5 🧷 (Beta)", 1.5)
 		task.delay(1.6, function()
-			showNotification("No funciona con Brainrot 🚫", 2.5)
+			notify("No funciona con Brainrot 🚫", 2.5)
 		end)
 	else
 		v5Btn.Text = "FPS Devourer V5"
 		v5Btn.BackgroundColor3 = Color3.fromRGB(255,255,255)
-		-- Al desactivar, notificar (opcional breve)
-		showNotification("SantiPan 🔥", 1)
+		notify("SantiPan 🔥", 1)
 	end
 end)
-
--- FIN DEL SCRIPT
