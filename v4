@@ -1,3 +1,7 @@
+--========================================================--
+-- SantiPan Helper + Tool ESP
+--========================================================--
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local CAS = game:GetService("ContextActionService")
@@ -9,10 +13,25 @@ local playerGui = player:WaitForChild("PlayerGui")
 local backpack = player:WaitForChild("Backpack")
 local char = player.Character or player.CharacterAdded:Wait()
 
+--========================================================--
+-- Variables principales
+--========================================================--
+
 local TOOL_NAME_CLOAK = "Invisibility Cloak"
 local CLICK_DELAY = 0.12
 local EQUIP_DELAY = 0.02
 local v5Enabled = false
+local toolESPEnabled = false
+
+local TOOL_NAME_MEGA = "Megaphone"
+local COOLDOWN_TIME = 20
+local TELEPORT_POSITION = Vector3.new(0, 20, 0)
+local FIRE_KEY = Enum.KeyCode.P
+local TELEPORT_KEY = Enum.KeyCode.X
+
+--========================================================--
+-- Funciones Cloak
+--========================================================--
 
 local function getCloakTool()
 	return backpack:FindFirstChild(TOOL_NAME_CLOAK) or (char and char:FindFirstChild(TOOL_NAME_CLOAK))
@@ -63,11 +82,96 @@ player.CharacterAdded:Connect(function(nc)
 	backpack = player:WaitForChild("Backpack")
 end)
 
-local TOOL_NAME_MEGA = "Megaphone"
-local COOLDOWN_TIME = 20
-local TELEPORT_POSITION = Vector3.new(0, 20, 0)
-local FIRE_KEY = Enum.KeyCode.P
-local TELEPORT_KEY = Enum.KeyCode.X
+--========================================================--
+-- Funciones Tool ESP
+--========================================================--
+
+local function createToolGui(p)
+	local char = p.Character
+	if not char then return end
+	local head = char:FindFirstChild("Head")
+	if not head then return end
+
+	if head:FindFirstChild("ToolsImagesGui") then
+		return head.ToolsImagesGui
+	end
+
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "ToolsImagesGui"
+	gui.Size = UDim2.new(0, 270, 0, 50)
+	gui.StudsOffset = Vector3.new(0, 4.5, 0)
+	gui.AlwaysOnTop = true
+	gui.Enabled = false
+	gui.Parent = head
+
+	local holder = Instance.new("Frame")
+	holder.Name = "Holder"
+	holder.Size = UDim2.new(1,0,1,0)
+	holder.BackgroundTransparency = 1
+	holder.Parent = gui
+
+	return gui
+end
+
+local function getToolTexture(tool)
+	if tool:FindFirstChild("TextureId") then
+		return tool.TextureId
+	end
+	if tool:IsA("Tool") and tool.TextureId then
+		return tool.TextureId
+	end
+	return "rbxassetid://0"
+end
+
+local function updatePlayerTools(p)
+	local char = p.Character
+	if not char then return end
+	local head = char:FindFirstChild("Head")
+	if not head then return end
+	local gui = head:FindFirstChild("ToolsImagesGui") or createToolGui(p)
+	if not gui then return end
+
+	gui.Enabled = toolESPEnabled
+
+	local holder = gui:FindFirstChild("Holder")
+	if not holder then return end
+
+	for _, obj in ipairs(holder:GetChildren()) do
+		if obj:IsA("ImageLabel") then
+			obj:Destroy()
+		end
+	end
+
+	local tools = {}
+	local backpack = p:FindFirstChild("Backpack")
+	if backpack then
+		for _, item in ipairs(backpack:GetChildren()) do
+			if item:IsA("Tool") then
+				table.insert(tools, item)
+			end
+		end
+	end
+
+	for _, item in ipairs(char:GetChildren()) do
+		if item:IsA("Tool") then
+			table.insert(tools, item)
+		end
+	end
+
+	for i = 1, math.min(6, #tools) do
+		local tool = tools[i]
+		local img = Instance.new("ImageLabel")
+		img.Size = UDim2.new(0,40,0,40)
+		img.Position = UDim2.new(0, (i-1)*45, 0, 0)
+		img.BackgroundTransparency = 1
+		img.Image = tool and getToolTexture(tool) or "rbxassetid://0"
+		img.Parent = holder
+	end
+end
+
+--========================================================--
+-- GUI Principal
+--========================================================--
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "CombinedController"
@@ -75,7 +179,7 @@ gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 175, 0, 220)
+frame.Size = UDim2.new(0, 175, 0, 260)
 frame.Position = UDim2.new(0.8, 0, 0.45, -130)
 frame.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
 frame.BackgroundTransparency = 0.1
@@ -83,15 +187,13 @@ frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
-
 Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
 
 local topbar = Instance.new("Frame", frame)
-topbar.Size = UDim2.new(1, 0, 0, 32)
+topbar.Size = UDim2.new(1,0,0,32)
 topbar.BackgroundColor3 = Color3.fromRGB(255,255,255)
 topbar.BackgroundTransparency = 0.3
 topbar.BorderSizePixel = 0
-
 Instance.new("UICorner", topbar).CornerRadius = UDim.new(0,14)
 
 local title = Instance.new("TextLabel", topbar)
@@ -130,10 +232,42 @@ local function makeButton(text, y)
 	return b
 end
 
+--========================================================--
+-- Botones
+--========================================================--
+
 local fireBtn = makeButton("Disparo", 45)
 local desyncBtn = makeButton("🌀 Desync", 85)
 local respawnBtn = makeButton("Respawn", 125)
 local v5Btn = makeButton("FPS Devourer V5", 165)
+local toolESPBtn = makeButton("Tool ESP: OFF", 205)
+
+--========================================================--
+-- Tool ESP toggle arreglado
+--========================================================--
+
+toolESPBtn.MouseButton1Click:Connect(function()
+	toolESPEnabled = not toolESPEnabled
+	toolESPBtn.Text = toolESPEnabled and "Tool ESP: ON" or "Tool ESP: OFF"
+	toolESPBtn.BackgroundColor3 = toolESPEnabled and Color3.fromRGB(180,255,180) or Color3.fromRGB(255,255,255)
+
+	-- Actualizar todos los jugadores actuales
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player then
+			local char = p.Character
+			if char and char:FindFirstChild("Head") then
+				local gui = char.Head:FindFirstChild("ToolsImagesGui") or createToolGui(p)
+				if gui then
+					gui.Enabled = toolESPEnabled
+				end
+			end
+		end
+	end
+end)
+
+--========================================================--
+-- Funciones Megaphone, V5, Respawn, Desync
+--========================================================--
 
 local lastUseTime = -COOLDOWN_TIME
 
@@ -167,8 +301,6 @@ fireBtn.MouseButton1Click:Connect(useMegaphone)
 uis.InputBegan:Connect(function(i,gp)
 	if not gp and i.KeyCode == FIRE_KEY then useMegaphone() end
 end)
-
--- 🔥 AQUÍ YA NO HAY NADA DE PROXIMITY PROMPTS
 
 local function notify(text, duration)
 	duration = duration or 2
@@ -252,4 +384,23 @@ v5Btn.MouseButton1Click:Connect(function()
 		v5Btn.BackgroundColor3 = Color3.fromRGB(255,255,255)
 		notify("SantiPan 🔥", 1)
 	end
+end)
+
+--========================================================--
+-- Loop Tool ESP (actualiza automáticamente)
+--========================================================--
+
+RunService.Heartbeat:Connect(function()
+	for _, p in ipairs(Players:GetPlayers()) do
+		if p ~= player then
+			updatePlayerTools(p)
+		end
+	end
+end)
+
+Players.PlayerAdded:Connect(function(p)
+	p.CharacterAdded:Connect(function()
+		task.wait(1)
+		createToolGui(p)
+	end)
 end)
