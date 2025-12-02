@@ -3,7 +3,6 @@ local RunService = game:GetService("RunService")
 local CAS = game:GetService("ContextActionService")
 local uis = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
-local ProximityPromptService = game:GetService("ProximityPromptService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -65,8 +64,6 @@ player.CharacterAdded:Connect(function(nc)
 end)
 
 local TOOL_NAME_MEGA = "Megaphone"
-local PROMPT_HOLD_TIME = 2
-local EQUIP_BEFORE_END = 0.2
 local COOLDOWN_TIME = 20
 local TELEPORT_POSITION = Vector3.new(0, 20, 0)
 local FIRE_KEY = Enum.KeyCode.P
@@ -171,12 +168,7 @@ uis.InputBegan:Connect(function(i,gp)
 	if not gp and i.KeyCode == FIRE_KEY then useMegaphone() end
 end)
 
-ProximityPromptService.PromptButtonHoldBegan:Connect(function(prompt, who)
-	if who == player and canUse() then
-		task.wait(math.max((prompt.HoldDuration or PROMPT_HOLD_TIME) - EQUIP_BEFORE_END,0))
-		useMegaphone()
-	end
-end)
+-- 🔥 AQUÍ YA NO HAY NADA DE PROXIMITY PROMPTS
 
 local function notify(text, duration)
 	duration = duration or 2
