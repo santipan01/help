@@ -27,7 +27,7 @@ local TOOL_NAME_MEGA = "Megaphone"
 local COOLDOWN_TIME = 20
 local TELEPORT_POSITION = Vector3.new(0, 20, 0)
 local FIRE_KEY = Enum.KeyCode.P
-local TELEPORT_KEY = Enum.KeyCode.X
+local TELEPORT_KEY = Enum.KeyCode.T
 
 --========================================================--
 -- Funciones Cloak
