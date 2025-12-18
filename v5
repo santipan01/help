@@ -1,5 +1,5 @@
 --=====================================
--- SantiPan Helper (GUI original + nuevos botones)
+-- SantiPan Helper (GUI + nuevos botones)
 --=====================================
 
 local Players = game:GetService("Players")
@@ -27,8 +27,10 @@ local FLY_ON = false
 local JUMP_ON = true
 local HOLD_SPACE = false
 local CARPET_EQUIPPED = false
-local lastFire = 0
-local FIRE_COOLDOWN = 0.2
+
+local COOLDOWN_TIME = 20
+local lastUseTime = -COOLDOWN_TIME
+local FIRE_KEY = Enum.KeyCode.P
 
 --================= SETUP =================
 local function setup(c)
@@ -41,7 +43,7 @@ player.CharacterAdded:Connect(setup)
 
 --================= GUI =================
 local gui = Instance.new("ScreenGui")
-gui.Name = "SantiPan Helper"
+gui.Name = "SantiPan Helper S"
 gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
@@ -151,34 +153,43 @@ jumpBox.FocusLost:Connect(function()
 	jumpBox.Text = tostring(JUMP_SPEED)
 end)
 
-local function fireTool()
-	local c = plr.Character
-	local bp = plr:FindFirstChild("Backpack")
-	if not c or not bp then return end
+--================= BOTON DISPARO =================
+local function canUse()
+	return tick() - lastUseTime >= COOLDOWN_TIME
+end
 
+local function updateCooldown()
+	local now = tick()
+	local remain = math.max(0, COOLDOWN_TIME - (now - lastUseTime))
+	fireBtn.Text = remain > 0 and ("Disparo ("..math.ceil(remain).."s)") or "Disparo"
+end
+
+local function useMegaphone()
+	if not canUse() then return end
+	lastUseTime = tick()
+	updateCooldown()
+	local c = player.Character or player.CharacterAdded:Wait()
+	local bp = player:FindFirstChild("Backpack")
+	if not bp then return end
 	local tool = bp:FindFirstChild(TOOL_NAME_FIRE) or c:FindFirstChild(TOOL_NAME_FIRE)
 	if tool then
 		tool.Parent = c
 		pcall(function() tool:Activate() end)
-		for _, r in ipairs(tool:GetDescendants()) do
-			if r:IsA("RemoteEvent") then
-				pcall(function() r:FireServer() end)
-			end
-		end
+		local remote = tool:FindFirstChildWhichIsA("RemoteEvent", true)
+		if remote then remote:FireServer() end
 	end
 end
 
-fireBtn.MouseButton1Click:Connect(fireTool)
-
---================= INPUT =================
-UIS.InputBegan:Connect(function(i,gp)
-	if gp then return end
-	if i.KeyCode == Enum.KeyCode.Space then
-		HOLD_SPACE = true
-	elseif i.KeyCode == Enum.KeyCode.P then
-		fireTool()
-	elseif i.KeyCode == Enum.KeyCode.M then
-		frame.Visible = not frame.Visible
+fireBtn.MouseButton1Click:Connect(useMegaphone)
+UIS.InputBegan:Connect(function(input, gp)
+	if not gp then
+		if input.KeyCode == Enum.KeyCode.Space then
+			HOLD_SPACE = true
+		elseif input.KeyCode == FIRE_KEY then
+			useMegaphone()
+		elseif input.KeyCode == Enum.KeyCode.M then
+			frame.Visible = not frame.Visible
+		end
 	end
 end)
 
@@ -219,4 +230,12 @@ RunService.Heartbeat:Connect(function()
 	end
 
 	root.AssemblyLinearVelocity = vel
+end)
+
+-- Actualizar cooldown constantemente
+task.spawn(function()
+	while true do
+		updateCooldown()
+		task.wait(0.05)
+	end
 end)
