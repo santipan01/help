@@ -1,0 +1,222 @@
+--=====================================
+-- SantiPan Helper (GUI original + nuevos botones)
+--=====================================
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local char = player.Character or player.CharacterAdded:Wait()
+local hum, root
+
+local TOOL_NAME_CARPET = "Flying Carpet"
+local TOOL_NAME_FIRE = "Megaphone"
+
+local SPEED = 100
+local JUMP_SPEED = 40
+
+local MIN_SPEED = 20
+local MAX_SPEED = 1000000
+local MIN_JUMP = 10
+local MAX_JUMP = 200
+
+local FLY_ON = false
+local JUMP_ON = true
+local HOLD_SPACE = false
+local CARPET_EQUIPPED = false
+local lastFire = 0
+local FIRE_COOLDOWN = 0.2
+
+--================= SETUP =================
+local function setup(c)
+	char = c
+	hum = char:WaitForChild("Humanoid")
+	root = char:WaitForChild("HumanoidRootPart")
+end
+setup(char)
+player.CharacterAdded:Connect(setup)
+
+--================= GUI =================
+local gui = Instance.new("ScreenGui")
+gui.Name = "SantiPan Helper"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 175, 0, 180)
+frame.Position = UDim2.new(0.8, 0, 0.45, -90)
+frame.BackgroundColor3 = Color3.fromRGB(240, 240, 250)
+frame.BackgroundTransparency = 0.1
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 14)
+
+-- Topbar con degradado dinámico
+local topbar = Instance.new("Frame", frame)
+topbar.Size = UDim2.new(1,0,0,32)
+topbar.BackgroundColor3 = Color3.fromRGB(255,255,255)
+topbar.BackgroundTransparency = 0.3
+topbar.BorderSizePixel = 0
+Instance.new("UICorner", topbar).CornerRadius = UDim.new(0,14)
+
+local title = Instance.new("TextLabel", topbar)
+title.Size = UDim2.new(1,0,1,0)
+title.BackgroundTransparency = 1
+title.Text = "SantiPan Helper ☄️"
+title.Font = Enum.Font.GothamBold
+title.TextColor3 = Color3.fromRGB(255,255,255)
+title.TextSize = 14
+title.TextStrokeTransparency = 0
+title.TextStrokeColor3 = Color3.fromRGB(0,0,0)
+
+local t = 0
+RunService.RenderStepped:Connect(function(dt)
+	t = t + dt
+	local c = Color3.fromRGB(
+		math.floor(255 - 95*math.sin(t*2)),
+		math.floor(255 - 95*math.sin(t*2)),
+		math.floor(255 - 95*math.sin(t*2))
+	)
+	title.TextColor3 = c
+end)
+
+local function makeButton(text, y)
+	local b = Instance.new("TextButton")
+	b.Size = UDim2.new(1, -24, 0, 36)
+	b.Position = UDim2.new(0, 12, 0, y)
+	b.BackgroundColor3 = Color3.fromRGB(255,255,255)
+	b.BackgroundTransparency = 0.15
+	b.Font = Enum.Font.GothamBold
+	b.TextSize = 13
+	b.Text = text
+	b.TextColor3 = Color3.fromRGB(40,40,40)
+	b.Parent = frame
+	Instance.new("UICorner", b).CornerRadius = UDim.new(0, 10)
+	return b
+end
+
+--================= BOTONES =================
+local speedBtn = makeButton("Flying Speed : OFF", 45)
+local jumpBtn = makeButton("Infinite Jump : ON", 85)
+local fireBtn = makeButton("Disparo", 125)
+
+-- TextBoxes
+local speedBox = Instance.new("TextBox", speedBtn)
+speedBox.Size = UDim2.new(0.3,0,0.75,0)
+speedBox.Position = UDim2.new(0.68,0,0.12,0)
+speedBox.Text = tostring(SPEED)
+speedBox.ClearTextOnFocus = false
+speedBox.Font = Enum.Font.Gotham
+speedBox.TextSize = 13
+speedBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
+speedBox.TextColor3 = Color3.fromRGB(30,30,35)
+Instance.new("UICorner", speedBox).CornerRadius = UDim.new(0,8)
+
+local jumpBox = Instance.new("TextBox", jumpBtn)
+jumpBox.Size = UDim2.new(0.3,0,0.75,0)
+jumpBox.Position = UDim2.new(0.68,0,0.12,0)
+jumpBox.Text = tostring(JUMP_SPEED)
+jumpBox.ClearTextOnFocus = false
+jumpBox.Font = Enum.Font.Gotham
+jumpBox.TextSize = 13
+jumpBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
+jumpBox.TextColor3 = Color3.fromRGB(30,30,35)
+Instance.new("UICorner", jumpBox).CornerRadius = UDim.new(0,8)
+
+--================= EVENTOS =================
+speedBtn.MouseButton1Click:Connect(function()
+	FLY_ON = not FLY_ON
+	speedBtn.Text = "Flying Speed : "..(FLY_ON and "ON" or "OFF")
+end)
+
+jumpBtn.MouseButton1Click:Connect(function()
+	JUMP_ON = not JUMP_ON
+	jumpBtn.Text = "Infinite Jump : "..(JUMP_ON and "ON" or "OFF")
+end)
+
+speedBox.FocusLost:Connect(function()
+	local v = tonumber(speedBox.Text)
+	if v then SPEED = math.clamp(v, MIN_SPEED, MAX_SPEED) end
+	speedBox.Text = tostring(SPEED)
+end)
+
+jumpBox.FocusLost:Connect(function()
+	local v = tonumber(jumpBox.Text)
+	if v then JUMP_SPEED = math.clamp(v, MIN_JUMP, MAX_JUMP) end
+	jumpBox.Text = tostring(JUMP_SPEED)
+end)
+
+local function fireTool()
+	local c = plr.Character
+	local bp = plr:FindFirstChild("Backpack")
+	if not c or not bp then return end
+
+	local tool = bp:FindFirstChild(TOOL_NAME_FIRE) or c:FindFirstChild(TOOL_NAME_FIRE)
+	if tool then
+		tool.Parent = c
+		pcall(function() tool:Activate() end)
+		for _, r in ipairs(tool:GetDescendants()) do
+			if r:IsA("RemoteEvent") then
+				pcall(function() r:FireServer() end)
+			end
+		end
+	end
+end
+
+fireBtn.MouseButton1Click:Connect(fireTool)
+
+--================= INPUT =================
+UIS.InputBegan:Connect(function(i,gp)
+	if gp then return end
+	if i.KeyCode == Enum.KeyCode.Space then
+		HOLD_SPACE = true
+	elseif i.KeyCode == Enum.KeyCode.P then
+		fireTool()
+	elseif i.KeyCode == Enum.KeyCode.M then
+		frame.Visible = not frame.Visible
+	end
+end)
+
+UIS.InputEnded:Connect(function(i)
+	if i.KeyCode == Enum.KeyCode.Space then
+		HOLD_SPACE = false
+	end
+end)
+
+--================= DETECCION TOOL =================
+RunService.Heartbeat:Connect(function()
+	if not char or not hum or not root then return end
+	CARPET_EQUIPPED = char:FindFirstChild(TOOL_NAME_CARPET) ~= nil
+
+	speedBtn.BackgroundColor3 =
+		(CARPET_EQUIPPED and FLY_ON)
+		and Color3.fromRGB(80,180,120)
+		or Color3.fromRGB(120,120,120)
+end)
+
+--================= LOGICA =================
+RunService.Heartbeat:Connect(function()
+	if hum.Health <= 0 then return end
+
+	local vel = root.AssemblyLinearVelocity
+
+	-- Flying Speed solo si TOOL + ON
+	if CARPET_EQUIPPED and FLY_ON then
+		local dir = hum.MoveDirection
+		vel = dir.Magnitude > 0
+			and Vector3.new(dir.X * SPEED, vel.Y, dir.Z * SPEED)
+			or Vector3.new(0, vel.Y, 0)
+	end
+
+	-- Infinite Jump
+	if JUMP_ON and HOLD_SPACE then
+		vel = Vector3.new(vel.X, JUMP_SPEED, vel.Z)
+	end
+
+	root.AssemblyLinearVelocity = vel
+end)
