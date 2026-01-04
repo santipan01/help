@@ -40,19 +40,38 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/santipan01/helper/ref
 -- RENAME TOOL: "Flying Carpet" -> "Fly" (OPTIMIZADO)
 --========================================================--
 
-local player = game.Players.LocalPlayer
+--========================================================--
+-- RENAME TOOL: "Flying Carpet" -> "Fly" (ANTI-RESPAWN)
+--========================================================--
 
--- Backpack
-for _, tool in ipairs(player.Backpack:GetChildren()) do
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local function renameTool(tool)
 	if tool:IsA("Tool") and tool.Name == "Flying Carpet" then
 		tool.Name = "Fly"
 	end
 end
 
--- Character (si está equipada)
-local char = player.Character or player.CharacterAdded:Wait()
-for _, tool in ipairs(char:GetChildren()) do
-	if tool:IsA("Tool") and tool.Name == "Flying Carpet" then
-		tool.Name = "Fly"
-	end
+-- Backpack actual
+local backpack = player:WaitForChild("Backpack")
+for _, tool in ipairs(backpack:GetChildren()) do
+	renameTool(tool)
 end
+
+-- Tools que entren al Backpack
+backpack.ChildAdded:Connect(renameTool)
+
+-- Character actual y futuros respawns
+local function onCharacter(char)
+	for _, tool in ipairs(char:GetChildren()) do
+		renameTool(tool)
+	end
+	char.ChildAdded:Connect(renameTool)
+end
+
+if player.Character then
+	onCharacter(player.Character)
+end
+
+player.CharacterAdded:Connect(onCharacter)
