@@ -35,3 +35,32 @@ end)
 --========================================================--
 
 loadstring(game:HttpGet("https://raw.githubusercontent.com/santipan01/helper/refs/heads/main/v4"))()
+
+--========================================================--
+-- RENAME TOOL: "Flying Carpet" -> "Fly" (OPTIMIZADO)
+--========================================================--
+
+local player = game:GetService("Players").LocalPlayer
+
+local function rename(tool)
+	if tool:IsA("Tool") and tool.Name == "Flying Carpet" then
+		tool.Name = "Fly"
+	end
+end
+
+local backpack = player:WaitForChild("Backpack")
+for _, v in ipairs(backpack:GetChildren()) do
+	rename(v)
+end
+
+if player.Character then
+	for _, v in ipairs(player.Character:GetChildren()) do
+		rename(v)
+	end
+end
+
+backpack.ChildAdded:Connect(rename)
+
+player.CharacterAdded:Connect(function(char)
+	char.ChildAdded:Connect(rename)
+end)
