@@ -45,33 +45,35 @@ loadstring(game:HttpGet("https://raw.githubusercontent.com/santipan01/helper/ref
 --========================================================--
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 
-local function renameTool(tool)
-	if tool:IsA("Tool") and tool.Name == "Flying Carpet" then
-		tool.Name = "Fly"
+local TARGET = "Flying Carpet"
+local NEW = "Fly"
+
+local acc = 0
+local INTERVAL = 0.15 -- segundos (instantáneo pero liviano)
+
+local function check(container)
+	for _, tool in ipairs(container:GetChildren()) do
+		if tool:IsA("Tool") and tool.Name == TARGET then
+			tool.Name = NEW
+		end
 	end
 end
 
--- Backpack actual
-local backpack = player:WaitForChild("Backpack")
-for _, tool in ipairs(backpack:GetChildren()) do
-	renameTool(tool)
-end
+RunService.Heartbeat:Connect(function(dt)
+	acc += dt
+	if acc < INTERVAL then return end
+	acc = 0
 
--- Tools que entren al Backpack
-backpack.ChildAdded:Connect(renameTool)
-
--- Character actual y futuros respawns
-local function onCharacter(char)
-	for _, tool in ipairs(char:GetChildren()) do
-		renameTool(tool)
+	local bp = player:FindFirstChild("Backpack")
+	if bp then
+		check(bp)
 	end
-	char.ChildAdded:Connect(renameTool)
-end
 
-if player.Character then
-	onCharacter(player.Character)
-end
-
-player.CharacterAdded:Connect(onCharacter)
+	local char = player.Character
+	if char then
+		check(char)
+	end
+end)
