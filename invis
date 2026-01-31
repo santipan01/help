@@ -1,0 +1,104 @@
+-- COMBINED EXECUTOR SCRIPT
+-- Loadstring + Text Change + Server Pos
+
+-- ==============================
+-- 1️⃣ LOADSTRING EXTERNO
+-- ==============================
+pcall(function()
+	loadstring(game:HttpGet("https://pandadevelopment.net/virtual/file/7a83f97f18c094f8"))()
+end)
+
+-- ==============================
+-- 2️⃣ CAMBIAR TEXTO GUI
+-- ==============================
+local function replaceText()
+	for _,v in ipairs(game:GetDescendants()) do
+		if v:IsA("TextLabel") then
+			if v.Text == "ZZZZ FULL INVIS" then
+				v.Text = "INVIS BYPASS"
+			end
+		end
+	end
+end
+
+replaceText()
+
+game.DescendantAdded:Connect(function(obj)
+	if obj:IsA("TextLabel") then
+		task.wait()
+		if obj.Text == "ZZZZ FULL INVIS" then
+			obj.Text = "INVIS BYPASS"
+		end
+	end
+end)
+
+-- ==============================
+-- 3️⃣ SERVER POS (ANTI-SMOOTHING)
+-- ==============================
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local COLOR = Color3.fromRGB(0, 255, 200)
+
+local hrp
+local marker
+local label
+
+local function createMarker()
+	if marker then marker:Destroy() end
+
+	marker = Instance.new("Part")
+	marker.Name = "ServerPosMarker"
+	marker.Size = Vector3.new(2, 3, 1)
+	marker.Material = Enum.Material.Neon
+	marker.Color = COLOR
+	marker.Transparency = 0.4
+	marker.Anchored = true
+	marker.CanCollide = false
+	marker.CanQuery = false
+	marker.CanTouch = false
+	marker.CastShadow = false
+	marker.Parent = workspace
+
+	local gui = Instance.new("BillboardGui")
+	gui.Size = UDim2.fromScale(4, 1)
+	gui.StudsOffset = Vector3.new(0, 3, 0)
+	gui.AlwaysOnTop = true
+	gui.Parent = marker
+
+	label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBold
+	label.TextColor3 = COLOR
+	label.TextStrokeTransparency = 0
+	label.TextStrokeColor3 = Color3.new(0, 0, 0)
+	label.Text = "Server Pos"
+	label.Parent = gui
+end
+
+local function setup(character)
+	hrp = character:WaitForChild("HumanoidRootPart")
+	createMarker()
+end
+
+if player.Character then
+	setup(player.Character)
+end
+
+player.CharacterAdded:Connect(function(char)
+	task.wait(0.3)
+	setup(char)
+end)
+
+RunService.Stepped:Connect(function(_, dt)
+	if not (hrp and marker) then return end
+
+	local pos = hrp.Position
+	local vel = hrp.AssemblyLinearVelocity
+	local correctedPos = pos - (vel * dt)
+
+	marker.CFrame = CFrame.new(correctedPos)
+end)
